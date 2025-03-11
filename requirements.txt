@@ -1,6 +1,7 @@
 aiohappyeyeballs==2.5.0
 selenium
 aiohttp==3.11.13
+webdriver_manager
 aiosignal==1.3.2
 altair==5.5.0
 annotated-types==0.7.0
