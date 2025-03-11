@@ -13,7 +13,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 import openai
-import chromadb
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
 from langchain.chat_models import ChatOpenAI
@@ -22,6 +21,8 @@ from langchain.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from dotenv import load_dotenv
 from io import BytesIO
+
+# ✅ Remove ChromaDB (Fix SQLite issue)
 
 # Load API Keys
 load_dotenv()
@@ -48,39 +49,6 @@ language = st.sidebar.selectbox("🌍 Select Chatbot Language", ["English", "Hin
 # Market Selection
 option = st.radio("📈 Select Market:", ("NSE", "BSE"))
 user_input = st.text_input("🔍 Enter Stock Symbol (NSE) or Security Code/ID (BSE):").upper()
-
-# Function to generate BSE report URL
-def generate_bse_url(user_input):
-    match = equity_df[equity_df["Security Code"] == user_input] if user_input.isdigit() else equity_df[equity_df["Security Id"] == user_input]
-    if match.empty:
-        match = eqt0_df[eqt0_df["Security Code"] == user_input] if user_input.isdigit() else eqt0_df[eqt0_df["Security Id"] == user_input]
-    if match.empty:
-        return None
-    security_code = match.iloc[0]["Security Code"]
-    security_id = match.iloc[0]["Security Id"].lower()
-    issuer_name = match.iloc[0]["Issuer Name"].lower().replace(" ", "-").replace("&", "-").rstrip(".")
-    return f"https://www.bseindia.com/stock-share-price/{issuer_name}/{security_id}/{security_code}/financials-annual-reports/"
-
-# Function to scrape BSE reports
-def scrape_bse_reports(url):
-    options = webdriver.ChromeOptions()
-    options.add_argument("--headless")
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-    driver.get(url)
-
-    reports = []
-    try:
-        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//table[@ng-if=\"loader.ARState=='loaded'\"]")))
-        rows = driver.find_elements(By.XPATH, "//table[@ng-if=\"loader.ARState=='loaded'\"]/tbody/tr")
-        for row in rows:
-            cols = row.find_elements(By.TAG_NAME, "td")
-            if len(cols) >= 6:
-                year, pdf_link = cols[0].text.strip(), cols[5].find_element(By.TAG_NAME, "a").get_attribute("href")
-                reports.append(f"{year}: {pdf_link}")
-    except Exception as e:
-        st.error(f"❌ Error: {str(e)}")
-    driver.quit()
-    return reports
 
 # Function to fetch NSE reports
 def fetch_nse_reports(symbol):
@@ -122,24 +90,17 @@ if st.button("📂 Fetch Reports"):
     if user_input:
         if option == "NSE":
             reports = fetch_nse_reports(user_input)
-        elif option == "BSE":
-            url = generate_bse_url(user_input)
-            if url:
-                st.success(f"🔗 Generated BSE URL: {url}")
-                reports = scrape_bse_reports(url)
-            else:
-                reports = None
+        else:
+            reports = None
         if reports:
             st.subheader("📄 Annual Reports")
             for report in reports:
                 st.write(f"📅 {report}")
         else:
             st.warning("❌ No reports found.")
-
-        # Fetch stock data
         plot_stock_data(user_input + (".NS" if option == "NSE" else ".BO"))
 
-# AI-powered Chatbot
+# ✅ AI-powered Chatbot - Using FAISS Instead of ChromaDB
 vector_db = None
 if documents:
     all_text = ""
@@ -159,6 +120,8 @@ if documents:
         else:
             text = doc.read().decode("utf-8")
         all_text += text + "\n"
+
+    # ✅ Create FAISS vector database (No ChromaDB)
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
     chunks = text_splitter.split_text(all_text)
     embeddings = OpenAIEmbeddings()
