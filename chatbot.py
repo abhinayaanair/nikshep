@@ -40,7 +40,7 @@ eqt0_df = pd.read_csv("EQT0.csv", dtype=str)
 st.title("📊 AI-powered Financial Assistant")
 
 # Sidebar - Upload Documents
-st.sidebar.header("📂 Upload Annual Reports & Documents")
+st.sidebar.header("📂 Upload Downloaded Annual Reports & Documents ")
 documents = st.sidebar.file_uploader("Upload PDF/Text Files", accept_multiple_files=True, type=["pdf", "txt"])
 
 # Select Language for AI Chatbot
