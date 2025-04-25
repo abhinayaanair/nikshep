@@ -128,7 +128,7 @@ if documents:
     vector_db = FAISS.from_texts(chunks, embeddings)
     st.sidebar.success("✅ Documents Indexed!")
 
-st.write("### 🤖 Ask AI About the Company By Uploading Annual Report on left")
+st.write("### 🤖 Ask AI About the Company By Uploading Annual Report on left, (click arrow on top left for mobile screens)")
 user_query = st.text_input("💬 Ask a question:")
 
 if st.button("🔍 Get Answer") and user_query:
